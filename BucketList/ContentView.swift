@@ -23,21 +23,27 @@ struct ContentView: View {
                                 .frame(width: 44, height: 44)
                                 .background(.white)
                                 .clipShape(.circle)
-                                .onLongPressGesture(minimumDuration: 0.1) {
+                                .onTapGesture {
                                     viewModel.selectedPlace = location
                                 }
                         }
                     }
                 }
-                .onTapGesture { position in
-                    if let coordinate = proxy.convert(position, from: .local) {
-                        viewModel.addLocation(at: coordinate)
-                    }
-                }
+                .gesture(
+                    LongPressGesture(minimumDuration: 0.7)
+                        .sequenced(before: DragGesture(minimumDistance: 0))
+                        .onEnded { value in
+                            if case .second(true, let drag?) = value {
+                                let location = drag.location
+                                if let coordinate = proxy.convert(location, from: .local) {
+                                    viewModel.addLocation(at: coordinate)
+                                }
+                            }
+                        }
+                )
                 .sheet(item: $viewModel.selectedPlace) { place in
-                    EditView(location: place) {
-                        viewModel.update(location: $0)
-                    }
+                    EditView(location: place)
+                        .environment(viewModel)
                 }
             }
         } else {
@@ -49,7 +55,7 @@ struct ContentView: View {
         }
     }
 }
-
+    
 #Preview {
     ContentView()
 }

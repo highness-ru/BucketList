@@ -6,11 +6,14 @@ struct EditView: View {
     }
     
     @Environment(\.dismiss) var dismiss
+    @Environment(ContentView.ViewModel.self) var viewModel
+    
     var location: Location
     
     @State private var name: String
     @State private var description: String
-    var onSave: (Location) -> Void
+    
+    @State private var showingDeleteConfirmation = false
     
     @State private var loadingState = LoadingState.loading
     @State private var pages = [Page]()
@@ -42,14 +45,23 @@ struct EditView: View {
             }
             .navigationTitle("Place details")
             .toolbar {
-                Button("Save") {
-                    var newLocation = location
-                    newLocation.id = UUID()
-                    newLocation.name = name
-                    newLocation.description = description
-                    
-                    onSave(newLocation)
-                    dismiss()
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Save") {
+                        var newLocation = location
+                        //newLocation.id = UUID()
+                        newLocation.name = name
+                        newLocation.description = description
+                        
+                        viewModel.update(location: newLocation)
+                        dismiss()
+                    }
+                }
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("Delete location", role: .destructive) {
+                        showingDeleteConfirmation = true
+                        viewModel.remove(location)
+                        dismiss()
+                    }
                 }
             }
             .task {
@@ -58,9 +70,8 @@ struct EditView: View {
         }
     }
     
-    init(location: Location, onSave: @escaping (Location) -> Void) {
+    init(location: Location) {
         self.location = location
-        self.onSave = onSave
         
         _name = State(initialValue: location.name)
         _description = State(initialValue: location.description)
@@ -85,6 +96,6 @@ struct EditView: View {
     }
 }
 
-#Preview {
-    EditView(location: .example) { _ in }
-}
+//#Preview {
+//    EditView(location: .example) { _ in }
+//}
